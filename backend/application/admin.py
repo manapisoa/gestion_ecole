@@ -69,13 +69,13 @@ class NoteAdmin(admin.ModelAdmin):
 
 # Configuration pour le modèle PaiementEcolage
 class PaiementEcolageAdmin(admin.ModelAdmin):
-    list_display = ('reference', 'etudiant_info', 'montant', 'date_paiement', 'date_echeance', 'statut', 'periode_scolaire')
-    list_filter = ('statut', 'mois_couvert', 'annee_couverte', 'mode_paiement')
-    search_fields = ('etudiant__nom', 'etudiant__prenom', 'reference', 'commentaire')
+    list_display = ('reference', 'etudiant_info', 'montant', 'date_paiement', 'date_echeance', 'statut', 'secretaire_info', 'periode_scolaire')
+    list_filter = ('statut', 'mois_couvert', 'annee_couverte', 'mode_paiement', 'secretaire')
+    search_fields = ('etudiant__nom', 'etudiant__prenom', 'reference', 'commentaire', 'secretaire__username')
     date_hierarchy = 'date_paiement'
     list_per_page = 20
-    raw_id_fields = ('etudiant', 'cree_par')
-    readonly_fields = ('date_creation',)
+    raw_id_fields = ('etudiant', 'cree_par', 'secretaire')
+    readonly_fields = ('date_creation', 'secretaire_info')
     fieldsets = (
         (_('Informations de base'), {
             'fields': ('etudiant', 'reference', 'montant', 'statut')
@@ -83,9 +83,12 @@ class PaiementEcolageAdmin(admin.ModelAdmin):
         (_('Détails du paiement'), {
             'fields': ('date_paiement', 'date_echeance', 'mode_paiement', 'mois_couvert', 'annee_couverte')
         }),
+        (_('Responsables'), {
+            'fields': ('cree_par', 'secretaire')
+        }),
         (_('Informations supplémentaires'), {
             'classes': ('collapse',),
-            'fields': ('commentaire', 'cree_par', 'date_creation')
+            'fields': ('commentaire', 'date_creation')
         }),
     )
     
@@ -101,6 +104,19 @@ class PaiementEcolageAdmin(admin.ModelAdmin):
         ]
         return f"{mois_fr[obj.mois_couvert - 1]} {obj.annee_couverte}"
     periode_scolaire.short_description = 'Période'
+    
+    def secretaire_info(self, obj):
+        if obj.secretaire:
+            return f"{obj.secretaire.get_full_name() or obj.secretaire.username} ({obj.secretaire.get_role_display()})"
+        return "-"
+    secretaire_info.short_description = 'Enregistré par'
+    
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # Si c'est une nouvelle entrée
+            obj.cree_par = request.user
+            if not obj.secretaire and hasattr(request.user, 'role') and request.user.role in [User.Role.ADMIN, User.Role.SECRETARIAT]:
+                obj.secretaire = request.user
+        super().save_model(request, obj, form, change)
 
 # Configuration pour le modèle PresenceCours
 class PresenceCoursAdmin(admin.ModelAdmin):
@@ -153,16 +169,20 @@ class EmploiDuTempsAdmin(admin.ModelAdmin):
         from django.utils.html import format_html
         from django.utils import timezone
         
-        if not obj.est_actif:
-            return format_html('<span style="color: #999;">Inactif</span>')
+        if not hasattr(obj, 'est_actif') or not obj.est_actif:
+            return format_html('<span style="color: #999;">{}</span>', 'Inactif')
             
         now = timezone.now().date()
-        if obj.date_fin and obj.date_fin < now:
-            return format_html('<span style="color: #f39c12;">Terminé</span>')
+        
+        if not hasattr(obj, 'date_debut') or obj.date_debut is None:
+            return format_html('<span style="color: #999;">{}</span>', 'Non défini')
+            
+        if hasattr(obj, 'date_fin') and obj.date_fin is not None and obj.date_fin < now:
+            return format_html('<span style="color: #f39c12;">{}</span>', 'Terminé')
         elif obj.date_debut > now:
-            return format_html('<span style="color: #3498db;">À venir</span>')
+            return format_html('<span style="color: #3498db;">{}</span>', 'À venir')
         else:
-            return format_html('<span style="color: #2ecc71;">En cours</span>')
+            return format_html('<span style="color: #2ecc71;">{}</span>', 'En cours')
     statut_edt.short_description = 'Statut'
     
     def duree_cours(self, obj):

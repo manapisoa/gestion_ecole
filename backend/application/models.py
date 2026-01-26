@@ -31,20 +31,70 @@ class UserManager(BaseUserManager):
         # S'assurer que les superutilisateurs sont actifs
         extra_fields.setdefault('is_active', True)
         # S'assurer qu'un superutilisateur est un administrateur
-        extra_fields['role'] = 'ADMIN'  # Use string literal
-        return self.create_user(email, password, **extra_fields)
-
 class User(AbstractUser):
     """Modèle utilisateur personnalisé."""
     
+    # Redéfinition du champ username pour le rendre non obligatoire
+    username = models.CharField(
+        _('nom d\'utilisateur'),
+        max_length=150,
+        blank=True,
+        null=True,
+        unique=True,
+        default=uuid.uuid4,  # Valeur par défaut unique
+        help_text=_('Généré automatiquement si non fourni')
+    )
+    
+    def save(self, *args, **kwargs):
+        if not self.username:
+            self.username = str(uuid.uuid4())
+        super().save(*args, **kwargs)
+    
+    # Définition des rôles possibles
     class Role(models.TextChoices):
         ADMIN = 'ADMIN', _('Administrateur')
-        ETUDIANT = 'ETUDIANT', _('Étudiant')
         ENSEIGNANT = 'ENSEIGNANT', _('Enseignant')
-        RESPONSABLE = 'RESPONSABLE', _('Responsable pédagogique')
-        SECRETAIRE = 'SECRETAIRE', _('Secrétaire')
+        ETUDIANT = 'ETUDIANT', _('Étudiant')
+        RESPONSABLE = 'RESPONSABLE', _('responsable Pédagogique')
+        SECRETARIAT = 'SECRETARIAT', _('Secrétariat')
     
-    # Ces champs sont nécessaires pour éviter les conflits avec le modèle User par défaut
+    # Définition des genres possibles
+    class Genre(models.TextChoices):
+        HOMME = 'H', _('Homme')
+        FEMME = 'F', _('Femme')
+        AUTRE = 'A', _('Autre')
+    
+    # Champs personnalisés
+    role = models.CharField(
+        _('rôle'),
+        max_length=15,
+        choices=Role.choices,
+        default=Role.ETUDIANT
+    )
+    
+    genre = models.CharField(
+        _('genre'),
+        max_length=1,
+        choices=Genre.choices,
+        blank=True,
+        null=True
+    )
+    
+    # Champs hérités de AbstractUser avec des personnalisations
+    email = models.EmailField(_('adresse email'), unique=True)
+    first_name = models.CharField(_('prénom'), max_length=150)
+    last_name = models.CharField(_('nom'), max_length=150)
+    is_active = models.BooleanField(
+        _('compte actif'),
+        default=False,
+        help_text=_('Détermine si l\'utilisateur peut se connecter. Les étudiants ne peuvent pas se connecter.')
+    )
+    
+    # Configuration pour utiliser l'email comme identifiant
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'role']
+    
+    # Gestion des groupes et permissions
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name=_('groupes'),
@@ -61,17 +111,6 @@ class User(AbstractUser):
         related_name='application_user_set',
         related_query_name='application_user',
     )
-    
-    class Role(models.TextChoices):
-        ADMIN = 'ADMIN', _('Administrateur')
-        SECRETARIAT = 'SECRETARIAT', _('Secrétariat')
-        ENSEIGNANT = 'ENSEIGNANT', _('Enseignant')
-        RESPONSABLE = 'RESPONSABLE', _('Responsable Pédagogique')
-    
-    class Genre(models.TextChoices):
-        HOMME = 'H', _('Homme')
-        FEMME = 'F', _('Femme')
-        AUTRE = 'A', _('Autre')
     
     # Champs personnalisés
     role = models.CharField(
@@ -511,6 +550,15 @@ class PaiementEcolage(models.Model):
         related_name='paiements_crees',
         verbose_name=_('créé par')
     )
+    secretaire = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'role__in': [User.Role.ADMIN, User.Role.SECRETARIAT]},
+        related_name='paiements_enregistres',
+        verbose_name=_('secrétaire')
+    )
     
     class Meta:
         verbose_name = _('paiement d\'écolage')
@@ -678,7 +726,13 @@ class EmploiDuTemps(models.Model):
         """Calcule la durée du cours en heures."""
         from datetime import datetime, time
         
-        debut = datetime.combine(datetime.today(), self.heure_debut)
-        fin = datetime.combine(datetime.today(), self.heure_fin)
-        duree = fin - debut
-        return duree.total_seconds() / 3600  # Convertir en heures
+        if not hasattr(self, 'heure_debut') or not hasattr(self, 'heure_fin') or not self.heure_debut or not self.heure_fin:
+            return 0.0
+            
+        try:
+            debut = datetime.combine(datetime.today(), self.heure_debut)
+            fin = datetime.combine(datetime.today(), self.heure_fin)
+            duree = fin - debut
+            return duree.total_seconds() / 3600  # Convertir en heures
+        except (TypeError, ValueError):
+            return 0.0
