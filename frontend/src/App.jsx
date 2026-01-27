@@ -1,16 +1,25 @@
-import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import StudentDashboard from './pages/StudentDashboard'
+import ParentDashboard from './pages/ParentDashboard'
+import AdminDashboard from './pages/AdminDashboard'
+import TeacherDashboard from './pages/TeacherDashboard'
+import NotFound from './pages/NotFound'
 
-const App = () => {
+function App() {
   return (
-    <div className='text-3xl  min-h-screen p-2'>
-      <div className='bg-stone-800 rounded-lg h-screen'>
-
-      </div>
-
-
-
-
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/student/*" element={<StudentDashboard />} />
+        <Route path="/parent/*" element={<ParentDashboard />} />
+        <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route path="/teacher/*" element={<TeacherDashboard />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   )
 }
 
