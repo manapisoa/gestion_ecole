@@ -6,17 +6,19 @@ import ParentDashboard from './pages/ParentDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import TeacherDashboard from './pages/TeacherDashboard'
 import NotFound from './pages/NotFound'
+import Register from './pages/Register'
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/student/*" element={<StudentDashboard />} />
         <Route path="/parent/*" element={<ParentDashboard />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
         <Route path="/teacher/*" element={<TeacherDashboard />} />
+        <Route path="/register" element={<Register />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
