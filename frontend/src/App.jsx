@@ -5,6 +5,7 @@ import StudentDashboard from './pages/StudentDashboard'
 import ParentDashboard from './pages/ParentDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import TeacherDashboard from './pages/TeacherDashboard'
+import PedagogicalCoordinatorDashboard from './pages/PedagogicalCoordinatorDashboard'
 import NotFound from './pages/NotFound'
 import Register from './pages/Register'
 
@@ -18,6 +19,7 @@ function App() {
         <Route path="/parent/*" element={<ParentDashboard />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
         <Route path="/teacher/*" element={<TeacherDashboard />} />
+        <Route path="/responsable/*" element={<PedagogicalCoordinatorDashboard />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

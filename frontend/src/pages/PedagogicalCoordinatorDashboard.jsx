@@ -4,7 +4,7 @@ import { useState } from 'react'
 import {
   LogOut, Users, BookOpen, BarChart3, Clock, FileText, MessageSquare,
   Menu, X, Download, TrendingUp, TrendingDown, Calendar,
-  AlertCircle, Home, Settings, Plus, Bell, MoreVertical
+  AlertCircle, Home, Settings, Plus, Bell, MoreVertical, CreditCard, CheckCircle, Eye
 } from 'lucide-react'
 
 function PedagogicalCoordinatorDashboard() {
@@ -17,6 +17,7 @@ function PedagogicalCoordinatorDashboard() {
     { id: 'notes', label: 'Notes & Évaluations', icon: BarChart3 },
     { id: 'presence', label: 'Présence & Absences', icon: Clock },
     { id: 'etudiants', label: 'Gestion Étudiants', icon: Users },
+    { id: 'paiements', label: 'Paiements Écollages', icon: CreditCard },
     { id: 'communication', label: 'Communication', icon: MessageSquare },
     { id: 'rapports', label: 'Rapports Pédagogiques', icon: FileText },
     { id: 'parametres', label: 'Paramètres', icon: Settings }
@@ -93,6 +94,7 @@ function PedagogicalCoordinatorDashboard() {
             {activeTab === 'notes' && <GradesManagement />}
             {activeTab === 'presence' && <AttendanceAnalysis />}
             {activeTab === 'etudiants' && <StudentTracking />}
+            {activeTab === 'paiements' && <div>Payment Management Component Placeholder</div>}
             {activeTab === 'communication' && <CommunicationModule />}
             {activeTab === 'rapports' && <PedagogicalReports />}
             {activeTab === 'parametres' && <CoordinatorSettings />}
@@ -717,6 +719,316 @@ function CoordinatorSettings() {
       <div className="flex gap-3">
         <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium">Enregistrer</button>
         <button className="px-6 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 font-medium">Annuler</button>
+      </div>
+    </div>
+  )
+}
+
+// ============ PAYMENT MANAGEMENT ============
+function PaymentManagement() {
+  const [selectedStream, setSelectedStream] = useState('Scientifique')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
+
+  const paymentData = {
+    'Scientifique': [
+      { id: 1, student: 'Jean Dupont', class: '2nde C', totalFees: 500000, paid: 500000, status: 'Payé', paymentDate: '2026-01-15' },
+      { id: 2, student: 'Marie Jean', class: '2nde C', totalFees: 500000, paid: 250000, status: 'Partiel', paymentDate: '2026-01-10' },
+      { id: 3, student: 'Paul Rakoto', class: '1ère S', totalFees: 500000, paid: 0, status: 'Impayé', paymentDate: null }
+    ],
+    'Littéraire': [
+      { id: 4, student: 'Sophie Martin', class: '2nde L', totalFees: 450000, paid: 450000, status: 'Payé', paymentDate: '2026-01-12' },
+      { id: 5, student: 'Luc Bernard', class: '1ère L', totalFees: 450000, paid: 225000, status: 'Partiel', paymentDate: '2026-01-05' }
+    ]
+  }
+
+  const currentData = paymentData[selectedStream] || []
+  const filteredData = filterStatus === 'all' 
+    ? currentData 
+    : currentData.filter(item => item.status.toLowerCase() === filterStatus.toLowerCase())
+
+  // Calculate statistics
+  const totalFees = currentData.reduce((sum, item) => sum + item.totalFees, 0)
+  const totalPaid = currentData.reduce((sum, item) => sum + item.paid, 0)
+  const totalDue = totalFees - totalPaid
+  const collectionRate = totalFees > 0 ? ((totalPaid / totalFees) * 100).toFixed(1) : 0
+
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Gestion des Paiements d'Écollages</h1>
+          <p className="text-muted-foreground mt-1">Suivi et gestion des frais de scolarité par filière</p>
+        </div>
+        <button
+          onClick={() => setShowPaymentForm(!showPaymentForm)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium"
+        >
+          <Plus className="w-4 h-4" /> Enregistrer un paiement
+        </button>
+      </div>
+
+      {/* Global Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          title="Frais totaux" 
+          value={`${(totalFees / 1000000).toFixed(1)}M Ar`}
+          icon={CreditCard}
+        />
+        <StatCard 
+          title="Montant collecté" 
+          value={`${(totalPaid / 1000000).toFixed(1)}M Ar`}
+          icon={CheckCircle}
+          trend="up"
+        />
+        <StatCard 
+          title="Montant dû" 
+          value={`${(totalDue / 1000000).toFixed(1)}M Ar`}
+          icon={AlertCircle}
+        />
+        <StatCard 
+          title="Taux recouvrement" 
+          value={`${collectionRate}%`}
+          icon={BarChart3}
+        />
+      </div>
+
+      {/* Payment Recording Form */}
+      {showPaymentForm && (
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h2 className="text-lg font-bold mb-4">Enregistrer un nouveau paiement</h2>
+          <form className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Filière</label>
+                <select className="w-full px-4 py-2 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option>Scientifique</option>
+                  <option>Littéraire</option>
+                  <option>Technique</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Élève</label>
+                <select className="w-full px-4 py-2 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option>Sélectionner un élève</option>
+                  {currentData.map(item => <option key={item.id}>{item.student}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Montant payé (Ar)</label>
+                <input type="number" placeholder="50000" className="w-full px-4 py-2 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Date de paiement</label>
+                <input type="date" className="w-full px-4 py-2 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold mb-2">Mode de paiement</label>
+                <select className="w-full px-4 py-2 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option>Espèces</option>
+                  <option>Chèque</option>
+                  <option>Virement bancaire</option>
+                  <option>Mobile Money</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium">Enregistrer le paiement</button>
+              <button type="button" onClick={() => setShowPaymentForm(false)} className="flex-1 px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 font-medium">Annuler</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Filters and Selection */}
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex gap-2 flex-wrap">
+            {['Scientifique', 'Littéraire', 'Technique'].map(stream => (
+              <button
+                key={stream}
+                onClick={() => setSelectedStream(stream)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedStream === stream
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                {stream}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {['all', 'Payé', 'Partiel', 'Impayé'].map(status => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status === 'all' ? 'all' : status)}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  filterStatus === status
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                {status === 'all' ? 'Tous' : status}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Table */}
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-muted border-b border-border">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-semibold">Élève</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">Classe</th>
+              <th className="px-6 py-3 text-right text-sm font-semibold">Frais totaux</th>
+              <th className="px-6 py-3 text-right text-sm font-semibold">Montant payé</th>
+              <th className="px-6 py-3 text-right text-sm font-semibold">Reste à payer</th>
+              <th className="px-6 py-3 text-center text-sm font-semibold">Statut</th>
+              <th className="px-6 py-3 text-center text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filteredData.map(item => (
+              <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                <td className="px-6 py-4 text-sm font-medium">{item.student}</td>
+                <td className="px-6 py-4 text-sm">{item.class}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-right">{(item.totalFees / 1000).toFixed(0)}k</td>
+                <td className="px-6 py-4 text-sm font-semibold text-right text-green-600">{(item.paid / 1000).toFixed(0)}k</td>
+                <td className="px-6 py-4 text-sm font-semibold text-right text-destructive">{((item.totalFees - item.paid) / 1000).toFixed(0)}k</td>
+                <td className="px-6 py-4 text-center">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    item.status === 'Payé' 
+                      ? 'bg-green-500/20 text-green-600'
+                      : item.status === 'Partiel'
+                      ? 'bg-orange-500/20 text-orange-600'
+                      : 'bg-red-500/20 text-red-600'
+                  }`}>
+                    {item.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <button className="text-primary hover:underline text-sm flex items-center justify-center gap-1">
+                    <Eye className="w-4 h-4" /> Détails
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Payment Breakdown by Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            Paiements complétés
+          </h3>
+          <div className="space-y-2">
+            {currentData.filter(item => item.status === 'Payé').map(item => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <p>{item.student}</p>
+                <p className="font-semibold text-green-600">{(item.paid / 1000).toFixed(0)}k</p>
+              </div>
+            ))}
+            {currentData.filter(item => item.status === 'Payé').length === 0 && (
+              <p className="text-muted-foreground text-sm">Aucun</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-orange-600" />
+            Paiements partiels
+          </h3>
+          <div className="space-y-2">
+            {currentData.filter(item => item.status === 'Partiel').map(item => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <p>{item.student}</p>
+                <p className="font-semibold text-orange-600">
+                  {(item.paid / 1000).toFixed(0)}k / {(item.totalFees / 1000).toFixed(0)}k
+                </p>
+              </div>
+            ))}
+            {currentData.filter(item => item.status === 'Partiel').length === 0 && (
+              <p className="text-muted-foreground text-sm">Aucun</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <TrendingDown className="w-5 h-5 text-red-600" />
+            Impayés
+          </h3>
+          <div className="space-y-2">
+            {currentData.filter(item => item.status === 'Impayé').map(item => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <p>{item.student}</p>
+                <p className="font-semibold text-red-600">{(item.totalFees / 1000).toFixed(0)}k</p>
+              </div>
+            ))}
+            {currentData.filter(item => item.status === 'Impayé').length === 0 && (
+              <p className="text-muted-foreground text-sm">Aucun</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Payment History */}
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h2 className="text-lg font-bold mb-4">Historique récent des paiements</h2>
+        <div className="space-y-3">
+          {[
+            { student: 'Jean Dupont', amount: '500k', date: '2026-01-15', method: 'Espèces' },
+            { student: 'Marie Jean', amount: '250k', date: '2026-01-10', method: 'Virement bancaire' },
+            { student: 'Sophie Martin', amount: '450k', date: '2026-01-12', method: 'Chèque' }
+          ].map((payment, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div>
+                <p className="font-semibold text-sm">{payment.student}</p>
+                <p className="text-xs text-muted-foreground">{payment.date} • {payment.method}</p>
+              </div>
+              <p className="font-bold text-green-600">{payment.amount}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Export Reports */}
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h2 className="text-lg font-bold mb-4">Rapports de paiement</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="flex items-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 rounded-lg font-medium text-sm transition-colors">
+            <Download className="w-4 h-4" /> Exporter tous les paiements
+          </button>
+          <button className="flex items-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 rounded-lg font-medium text-sm transition-colors">
+            <Download className="w-4 h-4" /> Exporter impayés
+          </button>
+          <button className="flex items-center gap-2 px-4 py-3 bg-muted hover:bg-muted/80 rounded-lg font-medium text-sm transition-colors">
+            <Download className="w-4 h-4" /> Relevé par filière
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StatCard({ title, value, icon: Icon, trend }) {
+  return (
+    <div className="bg-card rounded-lg border border-border p-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold mt-2">{value}</p>
+        </div>
+        <div className="bg-primary/10 rounded-lg p-3">
+          <Icon className="w-5 h-5 text-primary" />
+        </div>
       </div>
     </div>
   )
