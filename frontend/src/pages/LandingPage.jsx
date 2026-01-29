@@ -62,17 +62,6 @@ export default function LandingPage() {
       {/* Presentation Section */}
       <section className="py-20 bg-blue-50 mt-4">
         <div className="  items-center">
-         
-        
-
-       
-
-
-      
-
-
-
-
           <div className="text-center mb-16 ">
             <h3 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Notre Vision</h3>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
